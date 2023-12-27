@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Stage, Layer, Line, Text } from "react-konva";
+import ToolBar from "./ToolBar";
 
 type Tool = "pen" | "eraser" | "text";
 
@@ -104,6 +105,12 @@ export const Canvas: React.FC = () => {
 
   return (
     <div onClick={handleCanvasClick}>
+      <ToolBar
+        tool={tool}
+        handleToolChange={setTool}
+        handleUndo={handleUndo}
+        handleRedo={handleRedo}
+      />
       <Stage
         width={window.innerWidth}
         height={window.innerHeight}
@@ -142,7 +149,7 @@ export const Canvas: React.FC = () => {
           ))}
         </Layer>
       </Stage>
-      <select
+      {/* <select
         value={tool}
         onChange={(e) => {
           setTool(e.target.value as Tool);
@@ -151,9 +158,9 @@ export const Canvas: React.FC = () => {
         <option value="pen">Pen</option>
         <option value="text">Text</option>
         <option value="eraser">Eraser</option>
-      </select>
-      <button onClick={handleUndo}>Undo</button>
-      <button onClick={handleRedo}>Redo</button>
+      </select> */}
+      {/* <button onClick={handleUndo}>Undo</button>
+      <button onClick={handleRedo}>Redo</button> */}
     </div>
   );
 };
