@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from "react";
-import { Stage, Layer, Line, Text } from "react-konva";
+import { Stage, Layer, Line, Text, Circle, Rect } from "react-konva";
 import ToolBar from "./ToolBar";
 
-type Tool = "pen" | "eraser" | "text";
+type Tool = "pen" | "eraser" | "text" | "circle" | "rectangle";
 
 interface LineData {
   tool: Tool;
@@ -15,12 +15,46 @@ export const Canvas: React.FC = () => {
   const isDrawing = useRef(false);
   const history = useRef<LineData[][]>([]);
   const historyStep = useRef<number>(-1);
+  const [shapes, setShapes] = React.useState<any[]>([]);
 
   const [isDragging, setIsDragging] = React.useState(false);
   const [draggedTextPosition, setDraggedTextPosition] = React.useState({
     x: 100,
     y: 100,
   });
+
+  console.log("tool: ", tool);
+
+  const handleDrawCircle = () => {
+    const canvasCenterX = window.innerWidth / 2;
+    const canvasCenterY = window.innerHeight / 2;
+
+    const newCircle = {
+      type: "circle",
+      x: canvasCenterX,
+      y: canvasCenterY,
+      radius: 50,
+      fill: "green",
+      draggable: true,
+    };
+    setShapes([...shapes, newCircle]);
+  };
+
+  const handleDrawRect = () => {
+    const canvasCenterX = window.innerWidth / 2;
+    const canvasCenterY = window.innerHeight / 2;
+
+    const newRect = {
+      type: "rectangle",
+      x: canvasCenterX - 50,
+      y: canvasCenterY - 25,
+      width: 100,
+      height: 50,
+      fill: "blue",
+      draggable: true,
+    };
+    setShapes([...shapes, newRect]);
+  };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const pos = e.currentTarget.getBoundingClientRect();
@@ -30,14 +64,15 @@ export const Canvas: React.FC = () => {
     if (tool === "text") {
       setText("");
       setDraggedTextPosition({ x: clickX, y: clickY });
-    } else {
-      // Handle other tool actions with clickX and clickY
-      if (isDrawing.current && tool === "pen") {
-        const updatedLines = [...lines];
-        const lastLine = updatedLines[updatedLines.length - 1];
-        lastLine.points = lastLine.points.concat([clickX, clickY]);
-        setLines(updatedLines);
-      }
+    } else if (tool === "circle") {
+      handleDrawCircle(); // Call function to draw circle
+    } else if (tool === "rectangle") {
+      handleDrawRect(); // Call function to draw rectangle
+    } else if (tool === "pen" && isDrawing.current) {
+      const updatedLines = [...lines];
+      const lastLine = updatedLines[updatedLines.length - 1];
+      lastLine.points = lastLine.points.concat([clickX, clickY]);
+      setLines(updatedLines);
     }
   };
 
@@ -72,12 +107,16 @@ export const Canvas: React.FC = () => {
     if (!isDrawing.current) {
       return;
     }
+
     const stage = e.target.getStage();
     const point = stage.getPointerPosition();
     let lastLine = lines[lines.length - 1];
-    lastLine.points = lastLine.points.concat([point!.x, point!.y]);
-    lines.splice(lines.length - 1, 1, lastLine);
-    setLines([...lines]);
+
+    if (tool === "pen" || tool === "eraser") {
+      lastLine.points = lastLine.points.concat([point!.x, point!.y]);
+      lines.splice(lines.length - 1, 1, lastLine);
+      setLines([...lines]);
+    }
   };
 
   const handleMouseUp = () => {
@@ -110,6 +149,8 @@ export const Canvas: React.FC = () => {
         handleToolChange={setTool}
         handleUndo={handleUndo}
         handleRedo={handleRedo}
+        handleDrawCircle={handleDrawCircle}
+        handleDrawRect={handleDrawRect}
       />
       <Stage
         width={window.innerWidth}
@@ -147,6 +188,36 @@ export const Canvas: React.FC = () => {
               }
             />
           ))}
+          {/* handling shapes */}
+          {shapes.map((shape, i) => {
+            if (shape.type === "circle") {
+              return (
+                <Circle
+                  key={i}
+                  x={shape.x}
+                  y={shape.y}
+                  radius={shape.radius}
+                  // fill={shape.fill}
+                  draggable={shape.draggable}
+                  stroke={"white"}
+                />
+              );
+            } else if (shape.type === "rectangle") {
+              return (
+                <Rect
+                  key={i}
+                  x={shape.x}
+                  y={shape.y}
+                  width={shape.width}
+                  height={shape.height}
+                  // fill={shape.fill}
+                  draggable={shape.draggable}
+                  stroke={"white"}
+                />
+              );
+            }
+            return null;
+          })}
         </Layer>
       </Stage>
       {/* <select

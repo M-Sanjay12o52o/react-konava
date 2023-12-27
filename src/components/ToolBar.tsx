@@ -1,6 +1,13 @@
 import "../ToolOptions.css";
 
-const ToolBar = ({ tool, handleToolChange, handleUndo, handleRedo }: any) => {
+const ToolBar = ({
+  tool,
+  handleToolChange,
+  handleUndo,
+  handleRedo,
+  handleDrawCircle,
+  handleDrawRect,
+}: any) => {
   return (
     <div className="tool-options">
       <div className="tool-icons">
@@ -21,6 +28,26 @@ const ToolBar = ({ tool, handleToolChange, handleUndo, handleRedo }: any) => {
           onClick={() => handleToolChange("eraser")}
         >
           Eraser
+        </button>
+        <button
+          className={`tool-icon ${tool === "circle" ? "active" : ""}`}
+          onClick={() => {
+            handleToolChange("circle");
+            handleDrawCircle();
+            handleToolChange("");
+          }}
+        >
+          Circle
+        </button>
+        <button
+          className={`tool-icon ${tool === "rectangle" ? "active" : ""}`}
+          onClick={() => {
+            handleToolChange("rectangle");
+            handleDrawRect();
+            handleToolChange("");
+          }}
+        >
+          Rectangle
         </button>
       </div>
       <div className="tool-actions">
