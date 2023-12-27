@@ -1,19 +1,44 @@
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { Stage, Layer, Line, Text } from "react-konva";
 
-type Tool = "pen" | "eraser";
+type Tool = "pen" | "eraser" | "text";
 
 interface LineData {
   tool: Tool;
   points: number[];
 }
-
 export const Canvas: React.FC = () => {
   const [tool, setTool] = React.useState<Tool>("pen");
   const [lines, setLines] = React.useState<LineData[]>([]);
+  const [text, setText] = React.useState<string>("");
   const isDrawing = useRef(false);
   const history = useRef<LineData[][]>([]);
   const historyStep = useRef<number>(-1);
+
+  const [isDragging, setIsDragging] = React.useState(false);
+  const [draggedTextPosition, setDraggedTextPosition] = React.useState({
+    x: 100,
+    y: 100,
+  });
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const pos = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - pos.left;
+    const clickY = e.clientY - pos.top;
+
+    if (tool === "text") {
+      setText("");
+      setDraggedTextPosition({ x: clickX, y: clickY });
+    } else {
+      // Handle other tool actions with clickX and clickY
+      if (isDrawing.current && tool === "pen") {
+        const updatedLines = [...lines];
+        const lastLine = updatedLines[updatedLines.length - 1];
+        lastLine.points = lastLine.points.concat([clickX, clickY]);
+        setLines(updatedLines);
+      }
+    }
+  };
 
   const saveToHistory = () => {
     history.current.splice(historyStep.current + 1);
@@ -58,8 +83,27 @@ export const Canvas: React.FC = () => {
     isDrawing.current = false;
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: any) => {
+      if (tool === "text") {
+        const isAlphanumeric = /^[a-zA-Z0-9\s]+$/;
+        if (isAlphanumeric.test(e.key)) {
+          setText((prevText) => prevText + e.key);
+        } else if (e.key === "Backspace") {
+          setText((prevText) => prevText.slice(0, -1));
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [tool]);
+
   return (
-    <div>
+    <div onClick={handleCanvasClick}>
       <Stage
         width={window.innerWidth}
         height={window.innerHeight}
@@ -68,7 +112,20 @@ export const Canvas: React.FC = () => {
         onMouseUp={handleMouseUp}
       >
         <Layer>
-          <Text text="Just start drawing" x={5} y={30} />
+          <Text
+            text={text}
+            x={draggedTextPosition.x}
+            y={draggedTextPosition.y}
+            fontSize={48}
+            draggable
+            onDragStart={() => {
+              setIsDragging(true);
+            }}
+            onDragEnd={(e) => {
+              setIsDragging(false);
+              setDraggedTextPosition({ x: e.target.x(), y: e.target.y() });
+            }}
+          />
           {lines.map((line, i) => (
             <Line
               key={i}
@@ -92,6 +149,7 @@ export const Canvas: React.FC = () => {
         }}
       >
         <option value="pen">Pen</option>
+        <option value="text">Text</option>
         <option value="eraser">Eraser</option>
       </select>
       <button onClick={handleUndo}>Undo</button>
